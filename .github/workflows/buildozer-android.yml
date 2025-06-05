@@ -27,8 +27,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9' # Asegúrate de usar una versión de Python compatible con tu Kivy/Buildozer
-                                # Puedes probar con '3.8', '3.9', '3.10' si tienes problemas.
+          python-version: '3.10' # Cambiado a Python 3.10 para cumplir con el requisito de contourpy
+                                # O puedes probar con '3.11' o '3.12' si tu proyecto lo soporta.
 
       # Paso 3: Instalar Buildozer y sus dependencias (en el entorno del runner)
       # Buildozer tiene dependencias del sistema y de Python.
