@@ -27,9 +27,12 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin' # O 'adopt', 'zulu', etc.
+          distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle' # Caching para las dependencias de Gradle
+          cache: 'gradle'
+          # NUEVA LÍNEA: Indica la ruta donde se encuentran los archivos de Gradle para la caché
+          # Asume que tu proyecto Android está en la carpeta 'android/'
+          cache-dependency-path: android/build.gradle # O 'android/' si prefieres la carpeta
 
       # Paso 3: Configurar Node.js (si usas React Native)
       # Si tu proyecto es nativo de Android o Flutter, puedes omitir este paso
