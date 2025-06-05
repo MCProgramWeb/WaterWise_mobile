@@ -1,0 +1,84 @@
+name: Kivy Android Build with Buildozer
+
+# Eventos que disparan el workflow
+on:
+  push:
+    branches:
+      - main  # Se ejecuta cuando se hace push a la rama 'main'
+      - develop # Puedes añadir otras ramas si las usas (ej. 'develop')
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch: # Permite disparar el workflow manualmente desde la interfaz de GitHub
+
+jobs:
+  build_android_apk:
+    # El runner donde se ejecutará este job. Ubuntu es lo más común para Buildozer.
+    runs-on: ubuntu-latest
+
+    steps:
+      # Paso 1: Clonar el repositorio
+      - name: Checkout Code
+        uses: actions/checkout@v4 # Usa la acción oficial de GitHub para clonar el repositorio
+
+      # Paso 2: Configurar Python
+      # Buildozer necesita Python para ejecutarse y empaquetar tu app Kivy.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9' # Asegúrate de usar una versión de Python compatible con tu Kivy/Buildozer
+                                # Puedes probar con '3.8', '3.9', '3.10' si tienes problemas.
+
+      # Paso 3: Instalar Buildozer y sus dependencias (en el entorno del runner)
+      # Buildozer tiene dependencias del sistema y de Python.
+      - name: Install Buildozer and dependencies
+        run: |
+          # Instalar dependencias del sistema (Ubuntu) que Buildozer necesita
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev zlib1g-dev \
+            libffi-dev python3-pip python3-setuptools python3-venv \
+            openjdk-17-jdk ant unzip git curl default-jre default-jdk
+
+          # Instalar Buildozer usando pip
+          pip install buildozer
+
+      # Paso 4: Instalar las dependencias de tu proyecto Python (desde requirements.txt)
+      # Esto asegurará que Kivy y cualquier otra librería que tu app use estén disponibles.
+      - name: Install project dependencies
+        run: pip install -r requirements.txt
+
+      # Paso 5: Configurar Buildozer (descargará SDK, NDK, etc. por primera vez)
+      # Esto solo necesita ejecutarse una vez, pero es seguro ejecutarlo en cada build.
+      # Utiliza el comando 'buildozer init' si no tienes un buildozer.spec aún.
+      # Como ya tienes buildozer.spec, el siguiente paso lo usará directamente.
+      # NO NECESITAS 'buildozer init' si ya tienes el archivo buildozer.spec
+
+      # Paso 6: Construir el APK de depuración
+      # Buildozer leerá tu archivo buildozer.spec para saber cómo empaquetar la app.
+      # 'android debug' construye un APK no firmado para depuración.
+      # Si quieres una versión de release, sería 'android release' (requiere firma).
+      - name: Build Android Debug APK
+        run: buildozer android debug
+
+      # Paso 7: Subir el APK como un artefacto de GitHub Actions
+      # El APK se encontrará en la carpeta 'bin/' después de un build exitoso.
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kivy-android-debug-apk
+          path: bin/*.apk # La ruta común donde Buildozer guarda los APKs
+
+      # Paso 8: Opcional: Construir el APK de Release (si configuras la firma)
+      # Este paso requiere que configures las claves de firma en buildozer.spec
+      # o como secrets de GitHub (más avanzado).
+      # Descomenta este paso si quieres compilar APKs firmados para publicación.
+      # - name: Build Android Release APK
+      #   if: github.ref == 'refs/heads/main' # Solo para la rama principal para releases
+      #   run: buildozer android release
+      # - name: Upload Release APK artifact
+      #   if: github.ref == 'refs/heads/main'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: kivy-android-release-apk
+      #     path: bin/*.apk # Buildozer puede sobrescribir el debug APK, o generar un nombre diferente
